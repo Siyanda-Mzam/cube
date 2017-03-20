@@ -61,23 +61,4 @@
     transform: rotateX(90deg) translateZ(200px);
     background-color: rgba(0, 34, 89, 1);
   }
-
-  .show-front {
-    transform: translateZ(-100px) rotateY(0deg);
-  }
-  .show-back {
-    transform: translateZ(-100px) rotateX(180deg);
-  }
-  .show-right {
-    transform: translateZ(-100px) rotateY(90deg);
-  }
-  .show-left {
-    transform: translateZ(-100px) rotateY(-90deg);
-  }
-  .show-top {
-    transform: translateZ(-100px) rotateX(90deg);
-  }
-  .show-bottom {
-    transform: translateZ(-100px) rotateX(90deg);
-  }
 }
