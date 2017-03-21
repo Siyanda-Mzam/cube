@@ -1,64 +1,63 @@
 .container {
-  width:400px;
-  height:400px;
-  position: relative;
-  perspective: 1000px;
-  top: 30%;
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+    width: 400px;
+    height: 400px;
+    position: relative;
+    perspective: 1000px;
+    top: 20%;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 #cube {
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  transform-style: preserve-3d;
-  transform: translateZ(-200px);
-  transition: transform 1s;
-  top: 10px;
-  figure {
-      margin: 0;
-      width: 400px;
-      height:100%;
-      display: block;
-      position: absolute;
-      border:2px solid black;
-      box-sizing: content-box;
-      transition:1s;
-      opacity: 0.7;
-      .innerText {
-          position: absolute;
-          display: inline-block;
-          color: white;
-          font-size: 150px;
-          top: -25%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-      }
-  }
-  .front {
-    transform: rotateY(0deg) translateZ(200px);
-    background-color: rgba(255, 0, 0, 1);
-  }
-  .back {
-    transform: rotateX(180deg) translateZ(200px);
-    background-color: rgba(0, 255, 0, 1);
-  }
-  .right {
-    transform: rotateY(90deg) translateZ(200px);
-    background-color: rgba(0, 0, 255, 1);
-  }
-  .left {
-    transform: rotateY(-90deg) translateZ(200px);
-    background-color: rgba(255, 165, 0, 1);
-  }
-  .top {
-    transform: rotateX(-90deg) translateZ(200px);
-    background-color: rgba(255, 255, 0, 1);
-  }
-  .bottom {
-    transform: rotateX(90deg) translateZ(200px);
-    background-color: rgba(0, 34, 89, 1);
-  }
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    transform-style: preserve-3d;
+    transform: translateZ(-200px);
+    transition: transform 1s;
+    figure {
+        margin: 0;
+        width: 400px;
+        height: 100%;
+        display: block;
+        position: absolute;
+        border: 2px solid black;
+        box-sizing: content-box;
+        transition: 1s;
+        opacity: 0.7;
+        .innerText {
+            position: absolute;
+            display: inline-block;
+            color: white;
+            font-size: 150px;
+            top: -25%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+    }
+    .front {
+        transform: rotateY(0deg) translateZ(200px);
+        background-color: rgba(255, 0, 0, 1);
+    }
+    .back {
+        transform: rotateX(180deg) translateZ(200px);
+        background-color: rgba(0, 255, 0, 1);
+    }
+    .right {
+        transform: rotateY(90deg) translateZ(200px);
+        background-color: rgba(0, 0, 255, 1);
+    }
+    .left {
+        transform: rotateY(-90deg) translateZ(200px);
+        background-color: rgba(255, 165, 0, 1);
+    }
+    .top {
+        transform: rotateX(-90deg) translateZ(200px);
+        background-color: rgba(255, 255, 0, 1);
+    }
+    .bottom {
+        transform: rotateX(90deg) translateZ(200px);
+        background-color: rgba(0, 34, 89, 1);
+    }
 }
