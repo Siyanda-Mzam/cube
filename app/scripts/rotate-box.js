@@ -1,59 +1,286 @@
-;
-var isSet = 0;
-$(".btn").click(function() {
-    var target = $(this);
-    if (target.attr("id") == "front") {
-        $("#cube").css({ transform: "rotateY(0deg)" });
-    } else if (target.attr("id") == "back") {
-        $("#cube").css({ transform: "translateZ(-100px) rotateX(180deg)" });
-    } else if (target.attr("id") == "top") {
-        $("#cube").css({ transform: "translateZ(-100px) rotateX(90deg)" });
-    } else if (target.attr("id") == "bottom") {
-        $("#cube").css({ transform: "translateZ(-100px) rotateX(-90deg)" });
-    } else if (target.attr("id") == "right") {
-        $("#cube").css({ transform: "translateZ(-100px) rotateY(-90deg)" });
-    } else if (target.attr("id") == "left") {
-        $("#cube").css({ transform: "translateZ(-100px) rotateY(90deg)" });
-    }
-});
-$("#toggle-backface-visibility").click(function() {
-    if (isSet) {
-        $("figure").each(function() {
-            $(this).css({ opacity: 0.7 });
-        });
-        isSet = 0;
-    } else {
-        $("figure").each(function() {
-            $(this).css({ opacity: 1 });
-            isSet = 1;
-        });
-    }
-});
 
-// Rotate on mouse down
-$(document).ready(function() {
-    function rotateOnMouse(e, target) {
-        var offset = target.offset();
-        var center_x = (offset.left) + ($(target).width() / 2);
-        var center_y = (offset.top) + ($(target).height() / 2);
-        var mouse_x = e.pageX;
-        var mouse_y = e.pageY;
-        var radians = Math.atan2(mouse_x - center_x, mouse_y - center_y);
-        var degree = -((radians * (180 / Math.PI) * -1) + 100);
-        $(target).css('-moz-transform', 'translateZ(-100px) rotate(' + degree + 'deg)');
-        $(target).css('-webkit-transform', 'translateZ(-100px) rotateX(' + degree + 'deg)');
-        $(target).css('-o-transform', 'translateZ(-100px) rotate(' + degree + 'deg)');
-        $(target).css('-ms-transform', 'translateZ(-100px) rotate(' + degree + 'deg)');
-    }
 
-    $('.container #cube').mousedown(function(e) {
-        e.preventDefault(); // prevents the dragging of the cube
-        $(document).bind('mousemove', function(e2) {
-            rotateOnMouse(e2, $('.container #cube'));
-        });
-    });
+// Namespace
+var Defmech = Defmech ||
+{};
 
-    $(document).mouseup(function(e) {
-        $(document).unbind('mousemove');
-    });
-});
+Defmech.RotationWithQuaternion = (function()
+{
+	'use_strict';
+
+	var container;
+
+	var camera, scene, renderer;
+
+	var cube, plane;
+
+	var mouseDown = false;
+	var rotateStartPoint = new THREE.Vector3(0, 0, 1);
+	var rotateEndPoint = new THREE.Vector3(0, 0, 1);
+
+	var curQuaternion;
+	var windowHalfX = window.innerWidth / 2;
+	var windowHalfY = window.innerHeight / 2;
+	var rotationSpeed = 2;
+	var lastMoveTimestamp,
+		moveReleaseTimeDelta = 50;
+
+	var startPoint = {
+		x: 0,
+		y: 0
+	};
+
+	var deltaX = 0,
+		deltaY = 0;
+
+	var setup = function()
+	{
+		container = document.createElement('div');
+		document.body.appendChild(container);
+
+		camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 1000);
+		camera.position.y = 150;
+		camera.position.z = 500;
+
+		scene = new THREE.Scene();
+
+		// Cube
+
+		var boxGeometry = new THREE.BoxGeometry(200, 200, 200);
+        /*var textureLoader = new THREE.TextureLoader();
+        var texture0 = textureLoader.load( '../images/movie.jpg' );
+        var materials = [ new THREE.MeshBasicMaterial({map: texture0})];
+        var faceMaterial = new THREE.MeshFaceMaterial(materials);*/
+        var col = 10;
+		for (var i = 0; i < boxGeometry.faces.length; i += 2)
+		{
+            
+			var color = {
+				h: (0.5 / (boxGeometry.faces.length)) * col++,
+				s: 0.5,
+				l: 0.2
+			};
+
+			boxGeometry.faces[i].color.setHSL(color.h, color.s, color.l);
+			boxGeometry.faces[i + 1].color.setHSL(color.h, color.s, color.l);
+
+		}
+        
+		var cubeMaterial = new THREE.MeshBasicMaterial(
+		{
+			vertexColors: THREE.FaceColors,
+			overdraw: 0.5
+		});
+
+		cube = new THREE.Mesh(boxGeometry, cubeMaterial);
+		cube.position.y = 200;
+        cube.position.z = 50;
+		scene.add(cube);
+
+		// Plane
+
+		var planeGeometry = new THREE.PlaneGeometry(400, 400);
+		planeGeometry.applyMatrix(new THREE.Matrix4().makeRotationX(-Math.PI / 2));
+
+		var planeMaterial = new THREE.MeshBasicMaterial(
+		{
+			color: 0xe0e0ef,
+			overdraw: 0.5
+		});
+
+		plane = new THREE.Mesh(planeGeometry, planeMaterial);
+		//scene.add(plane);
+
+		renderer = new THREE.CanvasRenderer({alpha: true});
+		//renderer.setClearColor(0x000);
+		renderer.setSize(window.innerWidth, window.innerHeight);
+
+		container.appendChild(renderer.domElement);
+
+		document.addEventListener('mousedown', onDocumentMouseDown, false);
+
+		window.addEventListener('resize', onWindowResize, false);
+
+		animate();
+	};
+
+
+
+	function onWindowResize()
+	{
+		windowHalfX = window.innerWidth / 2;
+		windowHalfY = window.innerHeight / 2;
+
+		camera.aspect = window.innerWidth / window.innerHeight;
+		camera.updateProjectionMatrix();
+
+		renderer.setSize(window.innerWidth, window.innerHeight);
+	}
+
+	function onDocumentMouseDown(event)
+	{
+		event.preventDefault();
+
+		document.addEventListener('mousemove', onDocumentMouseMove, false);
+        document.addEventListener('touchstart', onDocumentTouchstart, false);
+		document.addEventListener('mouseup', onDocumentMouseUp, false);
+
+		mouseDown = true;
+
+		startPoint = {
+			x: event.clientX,
+			y: event.clientY
+		};
+
+		rotateStartPoint = rotateEndPoint = projectOnTrackball(-1, -1);
+	}
+
+	function onDocumentMouseMove(event)
+	{
+		deltaX = event.x - startPoint.x;
+		deltaY = event.y - startPoint.y;
+
+		handleRotation();
+
+		startPoint.x = event.x;
+		startPoint.y = event.y;
+
+		lastMoveTimestamp = new Date();
+	}
+	function onDocumentTouchstart(event)
+	{
+		deltaX = event.x - startPoint.x;
+		deltaY = event.y - startPoint.y;
+
+		handleRotation();
+
+		startPoint.x = event.x;
+		startPoint.y = event.y;
+
+		lastMoveTimestamp = new Date();
+	}
+	function onDocumentMouseUp(event)
+	{
+		if (new Date().getTime() - lastMoveTimestamp.getTime() > moveReleaseTimeDelta)
+		{
+			deltaX = event.x - startPoint.x;
+			deltaY = event.y - startPoint.y;
+		}
+
+		mouseDown = false;
+
+		document.removeEventListener('mousemove', onDocumentMouseMove, false);
+        document.removeEventListener('touchstart', onDocumentTouchstart, false);
+		document.removeEventListener('mouseup', onDocumentMouseUp, false);
+	}
+
+	function projectOnTrackball(touchX, touchY)
+	{
+		var mouseOnBall = new THREE.Vector3();
+
+		mouseOnBall.set(
+			clamp(touchX / windowHalfX, -1, 1), clamp(-touchY / windowHalfY, -1, 1),
+			0.0
+		);
+
+		var length = mouseOnBall.length();
+
+		if (length > 1.0)
+		{
+			mouseOnBall.normalize();
+		}
+		else
+		{
+			mouseOnBall.z = Math.sqrt(1.0 - length * length);
+		}
+
+		return mouseOnBall;
+	}
+
+	function rotateMatrix(rotateStart, rotateEnd)
+	{
+		var axis = new THREE.Vector3(),
+			quaternion = new THREE.Quaternion();
+
+		var angle = Math.acos(rotateStart.dot(rotateEnd) / rotateStart.length() / rotateEnd.length());
+
+		if (angle)
+		{
+			axis.crossVectors(rotateStart, rotateEnd).normalize();
+			angle *= rotationSpeed;
+			quaternion.setFromAxisAngle(axis, angle);
+		}
+		return quaternion || axis;
+	}
+
+	function clamp(value, min, max)
+	{
+		return Math.min(Math.max(value, min), max);
+	}
+
+	function animate()
+	{
+		requestAnimationFrame(animate);
+		render();
+	}
+
+	function render()
+	{
+		if (!mouseDown)
+		{
+			var drag = 0.95;
+			var minDelta = 0.5;
+
+			if (deltaX < -minDelta || deltaX > minDelta)
+			{
+				deltaX *= drag;
+			}
+			else
+			{
+				deltaX = 0;
+			}
+
+			if (deltaY < -minDelta || deltaY > minDelta)
+			{
+				deltaY *= drag;
+			}
+			else
+			{
+				deltaY = 0;
+			}
+
+			handleRotation();
+		}
+
+		renderer.render(scene, camera);
+	}
+
+	var handleRotation = function()
+	{
+		rotateEndPoint = projectOnTrackball(deltaX, deltaY);
+
+		var rotateQuaternion = rotateMatrix(rotateStartPoint, rotateEndPoint);
+		curQuaternion = cube.quaternion;
+		curQuaternion.multiplyQuaternions(rotateQuaternion, curQuaternion);
+		curQuaternion.normalize();
+		cube.setRotationFromQuaternion(curQuaternion);
+
+		rotateEndPoint = rotateStartPoint;
+	};
+
+	// PUBLIC INTERFACE
+	return {
+		init: function()
+		{
+			setup();
+		}
+	};
+})();
+
+document.onreadystatechange = function()
+{
+	if (document.readyState === 'complete')
+	{
+		Defmech.RotationWithQuaternion.init();
+	}
+};
