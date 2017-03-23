@@ -32,7 +32,7 @@ Defmech.RotationWithQuaternion = (function()
 
 	var deltaX = 0,
 		deltaY = 0;
-
+    var path = "../images/";
 	var setup = function()
 	{
 		container = document.createElement('div');
@@ -46,12 +46,23 @@ Defmech.RotationWithQuaternion = (function()
 
 		// Cube
 
-		var boxGeometry = new THREE.BoxGeometry(200, 200, 200);
-        /*var textureLoader = new THREE.TextureLoader();
-        var texture0 = textureLoader.load( '../images/movie.jpg' );
-        var materials = [ new THREE.MeshBasicMaterial({map: texture0})];
-        var faceMaterial = new THREE.MeshFaceMaterial(materials);*/
-        var col = 10;
+		var boxGeometry = new THREE.BoxGeometry(250, 250, 250),
+            textureLoader = new THREE.TextureLoader(),
+            texture0 = THREE.ImageUtils.loadTexture( path + "giphy.gif" ),
+            texture1 = THREE.ImageUtils.loadTexture( path + "giphy1.gif" ),
+            texture2 = THREE.ImageUtils.loadTexture( path + "giphy2.jpg" ),
+            texture3 = THREE.ImageUtils.loadTexture( path + "giphy3.gif" ),
+            texture4 = THREE.ImageUtils.loadTexture( path + "movie.jpg" ),
+            texture5 = THREE.ImageUtils.loadTexture( path + "giphy4.gif" );
+            texture4.wrapS = texture0.wrapT = THREE.RepeatWrapping;
+            var materials = [ new THREE.MeshLambertMaterial({map: texture0, overdraw:true}),
+                        new THREE.MeshLambertMaterial({map: texture1, overdraw:true}),
+                        new THREE.MeshLambertMaterial({map: texture2, overdraw:true}),
+                        new THREE.MeshLambertMaterial({map: texture3, overdraw:true}),
+                        new THREE.MeshLambertMaterial({map: texture4, overdraw: true}),
+                        new THREE.MeshLambertMaterial({map: texture5, overdraw:true})],
+            faceMaterial = new THREE.MeshFaceMaterial(materials);
+        /*var col = 10;
 		for (var i = 0; i < boxGeometry.faces.length; i += 2)
 		{
             
@@ -70,9 +81,8 @@ Defmech.RotationWithQuaternion = (function()
 		{
 			vertexColors: THREE.FaceColors,
 			overdraw: 0.5
-		});
-
-		cube = new THREE.Mesh(boxGeometry, cubeMaterial);
+		});*/
+		cube = new THREE.Mesh(boxGeometry, faceMaterial);
 		cube.position.y = 200;
         cube.position.z = 50;
 		scene.add(cube);
@@ -98,7 +108,7 @@ Defmech.RotationWithQuaternion = (function()
 		container.appendChild(renderer.domElement);
 
 		document.addEventListener('mousedown', onDocumentMouseDown, false);
-
+        document.addEventListener('touchstart', onDocumentMouseDown, false);
 		window.addEventListener('resize', onWindowResize, false);
 
 		animate();
