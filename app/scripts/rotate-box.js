@@ -15,6 +15,7 @@ Defmech.RotationWithQuaternion = (function()
 	var cube, plane;
 
 	var mouseDown = false;
+    var touchDown = false;
 	var rotateStartPoint = new THREE.Vector3(0, 0, 1);
 	var rotateEndPoint = new THREE.Vector3(0, 0, 1);
 
@@ -108,15 +109,13 @@ Defmech.RotationWithQuaternion = (function()
 		container.appendChild(renderer.domElement);
 
 		document.addEventListener('mousedown', onDocumentMouseDown, false);
-        document.addEventListener('touchstart', onDocumentMouseDown, false);
+        document.addEventListener('touchstart', onDocumentTouchstart, false);
 		window.addEventListener('resize', onWindowResize, false);
 
 		animate();
 	};
 
-
-
-	function onWindowResize()
+    function onWindowResize()
 	{
 		windowHalfX = window.innerWidth / 2;
 		windowHalfY = window.innerHeight / 2;
@@ -132,7 +131,6 @@ Defmech.RotationWithQuaternion = (function()
 		event.preventDefault();
 
 		document.addEventListener('mousemove', onDocumentMouseMove, false);
-        document.addEventListener('touchstart', onDocumentTouchstart, false);
 		document.addEventListener('mouseup', onDocumentMouseUp, false);
 
 		mouseDown = true;
@@ -142,9 +140,19 @@ Defmech.RotationWithQuaternion = (function()
 			y: event.clientY
 		};
 
-		rotateStartPoint = rotateEndPoint = projectOnTrackball(-1, -1);
+		rotateStartPoint = rotateEndPoint = projectOnTrackball(0, 0);
 	}
-
+    function onDocumentTouchstart(event) {
+        event.preventDefault();
+        document.addEventListener('touchmove', onDocumentTouchmove, false);
+        document.addEventListener('touchend', onDocumentTouchend, false);
+        touchDown = true;
+        startPoint = {
+            x: event.clientX,
+            y: event.clientY
+        }
+        rotateStartPoint = rotateEndPoint = projectOnTrackball(-1, 0);
+    }
 	function onDocumentMouseMove(event)
 	{
 		deltaX = event.x - startPoint.x;
@@ -157,7 +165,7 @@ Defmech.RotationWithQuaternion = (function()
 
 		lastMoveTimestamp = new Date();
 	}
-	function onDocumentTouchstart(event)
+    function onDocumentTouchmove(event)
 	{
 		deltaX = event.x - startPoint.x;
 		deltaY = event.y - startPoint.y;
@@ -169,7 +177,9 @@ Defmech.RotationWithQuaternion = (function()
 
 		lastMoveTimestamp = new Date();
 	}
-	function onDocumentMouseUp(event)
+
+
+    function onDocumentMouseUp(event)
 	{
 		if (new Date().getTime() - lastMoveTimestamp.getTime() > moveReleaseTimeDelta)
 		{
@@ -180,9 +190,18 @@ Defmech.RotationWithQuaternion = (function()
 		mouseDown = false;
 
 		document.removeEventListener('mousemove', onDocumentMouseMove, false);
-        document.removeEventListener('touchstart', onDocumentTouchstart, false);
 		document.removeEventListener('mouseup', onDocumentMouseUp, false);
 	}
+    function onDocumentTouchend () {
+        if (new Date().getTime() - lastMoveTimestamp.getTime() > moveReleaseTimeDelta) {
+            deltaX = event.x - startPoint.x;
+			deltaY = event.y - startPoint.y;
+        }
+        touchDown = false;
+        document.removeEventListener('touchstart', onDocumentTouchstart, false);
+        document.removeEventListener('touchend', onDocumentTouchend, false);
+    }
+
 
 	function projectOnTrackball(touchX, touchY)
 	{
@@ -236,7 +255,7 @@ Defmech.RotationWithQuaternion = (function()
 
 	function render()
 	{
-		if (!mouseDown)
+		if (!mouseDown || !touchDown)
 		{
 			var drag = 0.95;
 			var minDelta = 0.5;
